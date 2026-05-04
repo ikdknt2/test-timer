@@ -1,173 +1,19 @@
-html
 <!doctype html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>試験タイマー</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #f5f5f5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* 上部コントロール */
-.controls {
-  margin: 20px;
-}
-
-/* メイン表示 */
-.main {
-  text-align: center;
-  margin-top: 40px;
-}
-
-.section {
-  font-size: 28px;
-  margin-bottom: 10px;
-}
-
-.timer {
-  font-size: 64px;
-  font-weight: bold;
-}
-
-/* ボタン */
-.buttons {
-  margin-top: 30px;
-}
-
-button {
-  font-size: 18px;
-  margin: 5px;
-  padding: 10px 20px;
-}
-</style>
 </head>
 
 <body>
 
-<div class="controls">
-  <select id="exam"></select>
-  <select id="level"></select>
-  <button onclick="start()">開始</button>
-</div>
+<select id="exam"></select>
+<select id="level"></select>
+<button onclick="start()">開始</button>
 
-<div class="main">
-  <div class="section" id="section">試験を選択</div>
-  <div class="timer" id="timer">00:00</div>
+<h2 id="section">---</h2>
+<h1 id="timer">00:00</h1>
 
-  <div class="buttons">
-    <button onclick="pause()">一時停止</button>
-    <button onclick="resume()">再開</button>
-    <button onclick="skip()">次へ</button>
-  </div>
-</div>
-
-<script>
-// ===== データ =====
-const data = {
-  "英検": {
-    "2級": [
-      { name: "筆記", time: 85 },
-      { name: "リスニング", time: 25 }
-    ]
-  },
-  "TOEIC": {
-    "L&R": [
-      { name: "リスニング", time: 45 },
-      { name: "リーディング", time: 75 }
-    ]
-  }
-};
-
-// ===== UI初期化 =====
-const examSelect = document.getElementById("exam");
-const levelSelect = document.getElementById("level");
-
-for (let exam in data) {
-  examSelect.innerHTML += `<option>${exam}</option>`;
-}
-
-examSelect.onchange = updateLevels;
-
-function updateLevels() {
-  levelSelect.innerHTML = "";
-  for (let lv in data[examSelect.value]) {
-    levelSelect.innerHTML += `<option>${lv}</option>`;
-  }
-}
-updateLevels();
-
-// ===== タイマー =====
-let sections = [];
-let current = 0;
-let timeLeft = 0;
-let timerId = null;
-
-function start() {
-  sections = data[examSelect.value][levelSelect.value];
-  current = 0;
-  next();
-}
-
-function next() {
-  if (current >= sections.length) {
-    document.getElementById("section").textContent = "終了";
-    document.getElementById("timer").textContent = "00:00";
-    clearInterval(timerId);
-    return;
-  }
-
-  let s = sections[current];
-  document.getElementById("section").textContent = s.name;
-  timeLeft = s.time * 60;
-
-  clearInterval(timerId);
-  timerId = setInterval(tick, 1000);
-}
-
-function tick() {
-  timeLeft--;
-
-  let m = Math.floor(timeLeft / 60);
-  let s = timeLeft % 60;
-
-  document.getElementById("timer").textContent =
-    String(m).padStart(2, "0") + ":" +
-    String(s).padStart(2, "0");
-
-  // 残り5分で色変化
-  if (timeLeft <= 300) {
-    document.getElementById("timer").style.color = "red";
-  } else {
-    document.getElementById("timer").style.color = "black";
-  }
-
-  if (timeLeft <= 0) {
-    current++;
-    next();
-  }
-}
-
-function pause() {
-  clearInterval(timerId);
-}
-
-function resume() {
-  timerId = setInterval(tick, 1000);
-}
-
-function skip() {
-  current++;
-  next();
-}
-</script>
-
+<script src="main.js"></script>
 </body>
 </html>
