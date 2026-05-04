@@ -1,19 +1,214 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>試験タイマー</title>
+
+<style>
+/* ===== 全体 ===== */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f7f7f7;
+  color: #222;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== 上部 ===== */
+.controls {
+  margin-top: 20px;
+}
+
+select, button {
+  font-size: 16px;
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* ===== メイン ===== */
+.main {
+  text-align: center;
+  margin-top: 15vh;
+}
+
+.section {
+  font-size: 24px;
+  color: #555;
+}
+
+.timer {
+  font-size: min(12vw, 80px);
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* ===== ボタン ===== */
+.buttons {
+  margin-top: 25px;
+}
+
+button {
+  cursor: pointer;
+  background: white;
+}
+
+button:hover {
+  background: #eee;
+}
+
+/* ===== 色状態 ===== */
+.timer.warning {
+  color: orange;
+}
+
+.timer.danger {
+  color: red;
+}
+</style>
 </head>
 
 <body>
 
-<select id="exam"></select>
-<select id="level"></select>
-<button onclick="start()">開始</button>
+<div class="controls">
+  <select id="exam"></select>
+  <select id="level"></select>
+  <button onclick="start()">開始</button>
+</div>
 
-<h2 id="section">---</h2>
-<h1 id="timer">00:00</h1>
+<div class="main">
+  <div class="section" id="section">試験を選択</div>
+  <div class="timer" id="timer">00:00</div>
 
-<script src="main.js"></script>
+  <div class="buttons">
+    <button onclick="pause()">一時停止</button>
+    <button onclick="resume()">再開</button>
+    <button onclick="skip()">次へ</button>
+  </div>
+</div>
+
+<script>
+// ===== JSON読み込み =====
+let data = {};
+
+fetch("data.json")
+  .then(res => res.json())
+  .then(json => {
+    data = json;
+    initUI();
+  })
+  .catch(() => {
+    // fallback（json無いとき）
+    data = {
+      "英検": {
+        "2級": [
+          { name: "筆記", time: 85 },
+          { name: "リスニング", time: 25 }
+        ]
+      }
+    };
+    initUI();
+  });
+
+// ===== UI =====
+function initUI() {
+  const exam = document.getElementById("exam");
+  const level = document.getElementById("level");
+
+  for (let e in data) {
+    exam.innerHTML += `<option>${e}</option>`;
+  }
+
+  exam.onchange = updateLevels;
+
+  function updateLevels() {
+    level.innerHTML = "";
+    for (let l in data[exam.value]) {
+      level.innerHTML += `<option>${l}</option>`;
+    }
+  }
+
+  updateLevels();
+}
+
+// ===== タイマー =====
+let sections = [];
+let current = 0;
+let timeLeft = 0;
+let timerId = null;
+
+function start() {
+  const exam = document.getElementById("exam").value;
+  const level = document.getElementById("level").value;
+
+  sections = data[exam][level];
+  current = 0;
+  next();
+}
+
+function next() {
+  if (current >= sections.length) {
+    document.getElementById("section").textContent = "終了";
+    document.getElementById("timer").textContent = "00:00";
+    clearInterval(timerId);
+    return;
+  }
+
+  let s = sections[current];
+  document.getElementById("section").textContent = s.name;
+
+  timeLeft = s.time * 60;
+
+  clearInterval(timerId);
+  timerId = setInterval(tick, 1000);
+}
+
+function tick() {
+  timeLeft--;
+
+  let m = Math.floor(timeLeft / 60);
+  let s = timeLeft % 60;
+
+  const timerEl = document.getElementById("timer");
+
+  timerEl.textContent =
+    String(m).padStart(2, "0") + ":" +
+    String(s).padStart(2, "0");
+
+  timerEl.classList.remove("warning", "danger");
+
+  if (timeLeft <= 300) {
+    timerEl.classList.add("danger");
+  } else if (timeLeft <= 600) {
+    timerEl.classList.add("warning");
+  }
+
+  if (timeLeft <= 0) {
+    current++;
+    next();
+  }
+}
+
+function pause() {
+  clearInterval(timerId);
+}
+
+function resume() {
+  clearInterval(timerId);
+  timerId = setInterval(tick, 1000);
+}
+
+function skip() {
+  current++;
+  next();
+}
+</script>
+
 </body>
 </html>
